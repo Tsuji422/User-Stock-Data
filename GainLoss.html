@@ -1,1 +1,62 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Stock Detail</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 0; padding: 0; }
+    .container { padding: 10px; text-align: center; }
+    .title { font-weight: bold; margin-bottom: 10px; }
+    .detail { font-size: 16px; margin-bottom: 5px; }
+    .gain { color: green; }
+    .loss { color: red; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="title" id="companyName">企業名</div>
+    <div class="detail" id="stockPrice">現在株価: Loading...</div>
+    <div class="detail" id="cashValue">保有株現金換算額: Loading...</div>
+    <div class="detail" id="profitLoss">含み損益: Loading...</div>
+  </div>
 
+  <script>
+    const urlParams = new URLSearchParams(window.location.search);
+    const userName = urlParams.get('userName');
+    const companyName = urlParams.get('companyName');
+
+    // APIのURL（Google Sheets APIを呼び出す）
+    const apiUrl = `https://script.google.com/macros/s/AKfycbzYe4XQchcEdX34CdYfVSjVHI_iszD4pZD0iKhTPeCB7fM5uLZ-QbKY4l9tH1osuWRz/exec?userName=${userName}&companyName=${companyName}`;
+
+    fetch(apiUrl)
+      .then(response => response.json())
+      .then(data => {
+        if (data.status === "success" && data.data.length > 0) {
+          const stock = data.data[0];
+          const currentPrice = parseFloat(stock.currentPrice);
+          const remainingStock = parseInt(stock.remainingStock);
+          const averagePrice = parseFloat(stock.averagePurchasePrice);
+
+          // 含み損益と現金換算額を計算
+          const cashValue = currentPrice * remainingStock;
+          const profitLoss = (currentPrice - averagePrice) * remainingStock;
+
+          // データをHTMLに表示
+          document.getElementById('companyName').innerText = companyName;
+          document.getElementById('stockPrice').innerText = `現在株価: ¥${currentPrice.toLocaleString()}`;
+          document.getElementById('cashValue').innerText = `保有株現金換算額: ¥${cashValue.toLocaleString()}`;
+          const profitLossElement = document.getElementById('profitLoss');
+          profitLossElement.innerText = `含み損益: ¥${profitLoss.toLocaleString()}`;
+          profitLossElement.className = profitLoss >= 0 ? 'gain' : 'loss';
+        } else {
+          document.body.innerHTML = "<p>データが見つかりません。</p>";
+        }
+      })
+      .catch(error => {
+        console.error("Error fetching data:", error);
+        document.body.innerHTML = "<p>データ取得エラーが発生しました。</p>";
+      });
+  </script>
+</body>
+</html>
