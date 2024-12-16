@@ -27,7 +27,7 @@
     const companyName = urlParams.get('companyName');
 
     // APIのURL（Google Sheets APIを呼び出す）
-    const apiUrl = `https://script.google.com/macros/s/AKfycbzYe4XQchcEdX34CdYfVSjVHI_iszD4pZD0iKhTPeCB7fM5uLZ-QbKY4l9tH1osuWRz/exec?userName=${userName}&companyName=${companyName}`;
+    const apiUrl = `https://script.google.com/macros/s/AKfycbwZ3YxL2BSUcntHuybJ4_K-wR8RQoVBdqQW0Ba9rUPuYwOxT0OVtCotDrSv9rU1IIPW/exec?userName=${userName}&companyName=${companyName}`;
 
     fetch(apiUrl)
       .then(response => response.json())
