@@ -22,7 +22,6 @@
   </div>
 
   <script>
-    // URLパラメータを取得
     const urlParams = new URLSearchParams(window.location.search);
     const userName = urlParams.get('userName');
     const companyName = urlParams.get('companyName');
@@ -53,7 +52,7 @@
 
     // JSONPリクエストを送信
     const script = document.createElement('script');
-    script.src = `https://script.google.com/macros/s/YOUR_DEPLOY_ID/exec?userName=${userName}&companyName=${companyName}&callback=handleResponse`;
+    script.src = `https://script.google.com/macros/s/AKfycbxxkpLZxZxl2Dkm2UZxnacZnxFnH2PXUBCOJo4iyM4Cg9jLFCiRw61xgYMS4P0g7LJr/exec?userName=${userName}&companyName=${companyName}&callback=handleResponse`;
     document.body.appendChild(script);
   </script>
 </body>
