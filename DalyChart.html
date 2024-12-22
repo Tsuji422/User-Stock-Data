@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>株価チャート</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      margin: 0;
+    }
+
+    #chart-container {
+      width: 90%;
+      max-width: 800px;
+    }
+
+    canvas {
+      width: 100%;
+      height: auto;
+    }
+  </style>
+</head>
+<body>
+  <h1 id="chart-title">株価チャート</h1>
+  <div id="chart-container">
+    <canvas id="stockChart"></canvas>
+  </div>
+  <script>
+    const queryString = window.location.search;
+    const urlParams = new URLSearchParams(queryString);
+    const companyName = urlParams.get("companyName");
+
+    if (!companyName) {
+      document.body.innerHTML = "<p>Error: companyName parameter is missing in the URL.</p>";
+      throw new Error("Missing companyName parameter.");
+    }
+
+    document.getElementById("chart-title").textContent = `${companyName} 株価チャート`;
+
+    const apiUrl = `https://script.google.com/macros/s/AKfycbywGGARFIxv-jgbcEl57mwCP0-LJJI3RHqoMt6xqxu22EghU6nAYLgAiEMqB03i9TDY/exec?companyName=${encodeURIComponent(companyName)}`;
+
+    fetch(apiUrl)
+      .then((response) => response.json())
+      .then((data) => {
+        if (data.status === "success") {
+          const stockData = data.data;
+
+          const today = new Date().toISOString().split("T")[0];
+          const candlestickData = [];
+          const latestPrice = [];
+
+          const groupedData = stockData.reduce((acc, item) => {
+            if (!acc[item.date]) {
+              acc[item.date] = [];
+            }
+            acc[item.date].push(item.contractedPrice);
+            return acc;
+          }, {});
+
+          Object.entries(groupedData).forEach(([date, prices]) => {
+            const maxPrice = Math.max(...prices);
+            const minPrice = Math.min(...prices);
+
+            if (date === today) {
+              const currentPrice = stockData.find(item => item.date === date).currentPrice;
+              latestPrice.push({ x: date, y: currentPrice });
+            } else {
+              candlestickData.push({ x: date, max: maxPrice, min: minPrice });
+            }
+          });
+
+          const ctx = document.getElementById("stockChart").getContext("2d");
+
+          new Chart(ctx, {
+            type: "bar",
+            data: {
+              labels: candlestickData.map(item => item.x),
+              datasets: [
+                {
+                  label: "株価範囲（最大値-最小値）",
+                  data: candlestickData.map(item => ({
+                    x: item.x,
+                    y: item.min,
+                    height: item.max - item.min,
+                  })),
+                  backgroundColor: "rgba(75, 192, 192, 0.5)",
+                  borderColor: "rgba(75, 192, 192, 1)",
+                  borderWidth: 1,
+                },
+                {
+                  label: "最新値",
+                  type: "scatter",
+                  data: latestPrice,
+                  backgroundColor: "rgba(255, 99, 132, 1)",
+                  pointStyle: "circle",
+                  radius: 6,
+                },
+              ],
+            },
+            options: {
+              responsive: true,
+              plugins: {
+                tooltip: {
+                  callbacks: {
+                    label: function (tooltipItem) {
+                      if (tooltipItem.dataset.label === "最新値") {
+                        return `最新値: ${tooltipItem.raw.y}`;
+                      }
+                      if (tooltipItem.dataset.label === "株価範囲（最大値-最小値）") {
+                        const dataPoint = candlestickData[tooltipItem.dataIndex];
+                        return `最大値: ${dataPoint.max}, 最小値: ${dataPoint.min}`;
+                      }
+                      return null;
+                    },
+                  },
+                },
+                legend: {
+                  labels: {
+                    usePointStyle: true, // 赤丸の凡例を保持
+                    generateLabels: function (chart) {
+                      const data = chart.data.datasets;
+                      return data.map((dataset, index) => ({
+                        text: dataset.label,
+                        fillStyle: dataset.label === "最新値" ? "rgba(255, 99, 132, 1)" : dataset.backgroundColor,
+                        strokeStyle: dataset.borderColor,
+                        pointStyle: dataset.label === "最新値" ? "circle" : "rect",
+                      }));
+                    },
+                  },
+                },
+              },
+              scales: {
+                x: {
+                  type: "category",
+                  title: {
+                    display: true,
+                    text: "日付",
+                  },
+                },
+                y: {
+                  title: {
+                    display: true,
+                    text: "価格",
+                  },
+                  beginAtZero: false,
+                },
+              },
+            },
+          });
+        } else {
+          document.body.innerHTML = `<p>Error: ${data.message}</p>`;
+        }
+      })
+      .catch((error) => {
+        console.error("Error fetching data:", error);
+        document.body.innerHTML = `<p>Error fetching data: ${error.message}</p>`;
+      });
+  </script>
+</body>
+</html>
