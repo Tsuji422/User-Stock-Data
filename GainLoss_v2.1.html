@@ -79,7 +79,7 @@
     </div>
   </div>
 
-  <script>
+<script>
   const urlParams = new URLSearchParams(window.location.search);
   const userName = urlParams.get('userName');
   const companyName = urlParams.get('companyName');
@@ -87,59 +87,61 @@
   function handleResponse(response) {
     console.log("API Response:", response);
 
-    if (response.status !== "success" || !response.data || response.data.length === 0) {
+    if (!response || response.status !== "success" || !response.data || response.data.length === 0) {
       console.error("データが見つかりません:", response);
-      document.getElementById('companyName').innerText = companyName;
-      document.getElementById('stockQuantity').innerText = "データなし";
-      document.getElementById('stockPrice').innerText = "データなし";
-      document.getElementById('cashValue').innerText = "データなし";
-      document.getElementById('profitLoss').innerText = "データなし";
+      updateUI("データなし", "データなし", "データなし", "データなし");
       return;
     }
 
-    // 取得した全データから該当する取引データを使用
-    const transactions = response.data;
+    // ユーザー＆企業の取引データをフィルタリング
+    const transactions = response.data.filter(tx => tx.userName === userName && tx.companyName === companyName);
+
+    if (transactions.length === 0) {
+      console.warn("該当ユーザーのデータなし");
+      updateUI("データなし", "データなし", "データなし", "データなし");
+      return;
+    }
 
     let totalShares = 0;
     let totalCost = 0;
+    let latestStockPrice = 0; // 最新の株価
+    let unrealizedGainLoss = 0; // 含み損益
+    let averagePurchasePrice = 0; // 平均取得単価
 
     transactions.forEach(tx => {
-      const quantity = parseInt(tx.quantity);
-      const price = parseFloat(tx.price);
-      const type = tx.type;
+      const quantity = parseInt(tx.stockQuantity) || 0;
+      const price = parseFloat(tx["contracted price"]) || 0;
+      const transactionType = (tx.transactionType || "").toUpperCase(); // BUY / SELL の判定
 
-      if (type === "BUY") {
+      if (transactionType === "BUY") {
         totalShares += quantity;
         totalCost += quantity * price;
-      } else if (type === "SELL") {
+      } else if (transactionType === "SELL") {
         totalShares -= quantity;
       }
+
+      // 最新の株価を取得
+      latestStockPrice = parseFloat(tx.currentPrice) || latestStockPrice;
+      // 含み損益を取得
+      unrealizedGainLoss = parseFloat(tx.unrealizedGainLoss) || 0;
+      // 平均取得単価
+      averagePurchasePrice = parseFloat(tx.averagePurchasePrice) || 0;
     });
 
-    // 平均購入価格の計算
-    const averagePrice = totalShares > 0 ? totalCost / totalShares : 0;
+    // 現金換算額の計算
+    const cashValue = totalShares * latestStockPrice;
 
-    // 最新の株価を取得（別のAPIがない場合、仮の値を設定）
-    const currentPrice = 1500; // 実際にはAPIから取得する処理を追加
-    const cashValue = totalShares * currentPrice;
-    const profitLoss = (currentPrice - averagePrice) * totalShares;
+    updateUI(totalShares, latestStockPrice, cashValue, unrealizedGainLoss);
+  }
 
-    // データをHTMLに表示
+  function updateUI(shares, stockPrice, cashValue, profitLoss) {
     document.getElementById('companyName').innerText = companyName;
-    document.getElementById('stockQuantity').innerText = `${totalShares} 株`;
-    document.getElementById('stockPrice').innerText = `¥${currentPrice.toLocaleString()}`;
-    document.getElementById('cashValue').innerText = `¥${cashValue.toLocaleString()}`;
+    document.getElementById('stockQuantity').innerText = shares === "データなし" ? shares : `${shares} 株`;
+    document.getElementById('stockPrice').innerText = stockPrice === "データなし" ? stockPrice : `¥${stockPrice.toLocaleString()}`;
+    document.getElementById('cashValue').innerText = cashValue === "データなし" ? cashValue : `¥${cashValue.toLocaleString()}`;
     const profitLossElement = document.getElementById('profitLoss');
-    profitLossElement.innerText = `¥${profitLoss.toLocaleString()}`;
+    profitLossElement.innerText = profitLoss === "データなし" ? profitLoss : `¥${profitLoss.toLocaleString()}`;
     profitLossElement.className = profitLoss >= 0 ? 'gain' : 'loss';
-
-    console.log("計算結果:", {
-      totalShares,
-      averagePrice,
-      currentPrice,
-      cashValue,
-      profitLoss
-    });
   }
 
   // JSONPリクエストを送信
