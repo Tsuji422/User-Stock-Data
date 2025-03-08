@@ -1,1 +1,151 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Stock Detail</title>
+  <style>
+    body { 
+      font-family: Arial, sans-serif; 
+      margin: 0; 
+      padding: 0; 
+      background-color: #f9f9f9;
+      overflow: hidden; /* スクロールを無効化 */
+    }
+    .container { 
+      padding: 20px; 
+      text-align: left; 
+      max-width: 400px;
+      margin: 0 auto; /* 中央に配置 */
+      background-color: #fff; 
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+      box-sizing: border-box; /* 内側の余白も含める */
+    }
+    .row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+      border-bottom: 1px solid #eee;
+      padding-bottom: 5px;
+    }
+    .row:last-child {
+      border-bottom: none;
+    }
+    .title {
+      font-size: 20px;
+      font-weight: bold;
+      margin-bottom: 15px;
+      text-align: center;
+    }
+    .label { 
+      font-weight: bold; 
+      color: #555;
+    }
+    .value { 
+      font-size: 16px; 
+      color: #333;
+    }
+    .gain { 
+      color: green; 
+      font-weight: bold; 
+    }
+    .loss { 
+      color: red; 
+      font-weight: bold; 
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="title" id="companyName">企業名</div>
+    <div class="row">
+      <div class="label">保有株数</div>
+      <div class="value" id="stockQuantity">Loading...</div>
+    </div>
+    <div class="row">
+      <div class="label">現在株価</div>
+      <div class="value" id="stockPrice">Loading...</div>
+    </div>
+    <div class="row">
+      <div class="label">現金換算額</div>
+      <div class="value" id="cashValue">Loading...</div>
+    </div>
+    <div class="row">
+      <div class="label">評価損益</div>
+      <div class="value" id="profitLoss">Loading...</div>
+    </div>
+  </div>
 
+  <script>
+  const urlParams = new URLSearchParams(window.location.search);
+  const userName = urlParams.get('userName');
+  const companyName = urlParams.get('companyName');
+
+  function handleResponse(response) {
+    console.log("API Response:", response);
+
+    if (response.status !== "success" || !response.data || response.data.length === 0) {
+      console.error("データが見つかりません:", response);
+      document.getElementById('companyName').innerText = companyName;
+      document.getElementById('stockQuantity').innerText = "データなし";
+      document.getElementById('stockPrice').innerText = "データなし";
+      document.getElementById('cashValue').innerText = "データなし";
+      document.getElementById('profitLoss').innerText = "データなし";
+      return;
+    }
+
+    // 取得した全データから該当する取引データを使用
+    const transactions = response.data;
+
+    let totalShares = 0;
+    let totalCost = 0;
+
+    transactions.forEach(tx => {
+      const quantity = parseInt(tx.quantity);
+      const price = parseFloat(tx.price);
+      const type = tx.type;
+
+      if (type === "BUY") {
+        totalShares += quantity;
+        totalCost += quantity * price;
+      } else if (type === "SELL") {
+        totalShares -= quantity;
+      }
+    });
+
+    // 平均購入価格の計算
+    const averagePrice = totalShares > 0 ? totalCost / totalShares : 0;
+
+    // 最新の株価を取得（別のAPIがない場合、仮の値を設定）
+    const currentPrice = 1500; // 実際にはAPIから取得する処理を追加
+    const cashValue = totalShares * currentPrice;
+    const profitLoss = (currentPrice - averagePrice) * totalShares;
+
+    // データをHTMLに表示
+    document.getElementById('companyName').innerText = companyName;
+    document.getElementById('stockQuantity').innerText = `${totalShares} 株`;
+    document.getElementById('stockPrice').innerText = `¥${currentPrice.toLocaleString()}`;
+    document.getElementById('cashValue').innerText = `¥${cashValue.toLocaleString()}`;
+    const profitLossElement = document.getElementById('profitLoss');
+    profitLossElement.innerText = `¥${profitLoss.toLocaleString()}`;
+    profitLossElement.className = profitLoss >= 0 ? 'gain' : 'loss';
+
+    console.log("計算結果:", {
+      totalShares,
+      averagePrice,
+      currentPrice,
+      cashValue,
+      profitLoss
+    });
+  }
+
+  // JSONPリクエストを送信
+  const script = document.createElement('script');
+  script.src = `https://script.google.com/macros/s/AKfycbxxkpLZxZxl2Dkm2UZxnacZnxFnH2PXUBCOJo4iyM4Cg9jLFCiRw61xgYMS4P0g7LJr/exec?userName=${userName}&companyName=${companyName}&callback=handleResponse`;
+  document.body.appendChild(script);
+</script>
+</body>
+</html>
