@@ -5,25 +5,23 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Stock Detail</title>
   <style>
-    html, body { 
+    body { 
+      font-family: Arial, sans-serif; 
       margin: 0; 
       padding: 0; 
-      height: 100%;
-      overflow: hidden;
-      font-family: Arial, sans-serif; 
       background-color: #f9f9f9;
+      overflow: hidden; /* スクロールを無効化 */
     }
     .container { 
       padding: 20px; 
       text-align: left; 
       max-width: 400px;
-      margin: 50px auto;
+      margin: 0 auto; /* 中央に配置 */
       background-color: #fff; 
       border: 1px solid #ddd;
       border-radius: 8px;
       box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-      box-sizing: border-box;
-      display: none; /* デフォルトでは非表示 */
+      box-sizing: border-box; /* 内側の余白も含める */
     }
     .row {
       display: flex;
@@ -33,62 +31,51 @@
       border-bottom: 1px solid #eee;
       padding-bottom: 5px;
     }
-    .row:last-child { border-bottom: none; }
+    .row:last-child {
+      border-bottom: none;
+    }
     .title {
       font-size: 20px;
       font-weight: bold;
       margin-bottom: 15px;
       text-align: center;
     }
-    .label { font-weight: bold; color: #555; }
-    .value { font-size: 16px; color: #333; }
-    .gain { color: green; font-weight: bold; }
-    .loss { color: red; font-weight: bold; }
-
-    /* 🔄 ローディングスピナー */
-    .loading-spinner {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
+    .label { 
+      font-weight: bold; 
+      color: #555;
     }
-    .spinner {
-      border: 4px solid rgba(0, 0, 0, 0.1);
-      border-top: 4px solid #3498db;
-      border-radius: 50%;
-      width: 40px;
-      height: 40px;
-      animation: spin 1s linear infinite;
+    .value { 
+      font-size: 16px; 
+      color: #333;
     }
-    @keyframes spin {
-      0% { transform: rotate(0deg); }
-      100% { transform: rotate(360deg); }
+    .gain { 
+      color: green; 
+      font-weight: bold; 
+    }
+    .loss { 
+      color: red; 
+      font-weight: bold; 
     }
   </style>
 </head>
 <body>
-  <!-- 🔄 ローディングスピナー -->
-  <div class="loading-spinner" id="loadingSpinner">
-    <div class="spinner"></div>
-  </div>
-
-  <div class="container" id="stockContainer">
+  <div class="container">
     <div class="title" id="companyName">企業名</div>
     <div class="row">
       <div class="label">保有株数</div>
-      <div class="value" id="stockQuantity">-</div>
+      <div class="value" id="stockQuantity">Loading...</div>
     </div>
     <div class="row">
       <div class="label">現在株価</div>
-      <div class="value" id="stockPrice">-</div>
+      <div class="value" id="stockPrice">Loading...</div>
     </div>
     <div class="row">
       <div class="label">現金換算額</div>
-      <div class="value" id="cashValue">-</div>
+      <div class="value" id="cashValue">Loading...</div>
     </div>
     <div class="row">
       <div class="label">評価損益</div>
-      <div class="value" id="profitLoss">-</div>
+      <div class="value" id="profitLoss">Loading...</div>
     </div>
   </div>
 
@@ -99,8 +86,6 @@
 
     // JSONPのコールバック関数
     function handleResponse(response) {
-      document.getElementById('loadingSpinner').style.display = 'none'; // 🔄 スピナーを消す
-
       if (response.status === "success" && response.data.length > 0) {
         const stock = response.data[0];
         const currentPrice = parseFloat(stock.currentPrice);
@@ -119,17 +104,14 @@
         const profitLossElement = document.getElementById('profitLoss');
         profitLossElement.innerText = `¥${profitLoss.toLocaleString()}`;
         profitLossElement.className = profitLoss >= 0 ? 'gain' : 'loss';
-
-        // 📌 コンテンツを表示
-        document.getElementById('stockContainer').style.display = 'block';
       } else {
-        alert("データがありません"); // ❌ データが空の場合、アラートを表示
+        document.body.innerHTML = "<p style='text-align:center;'>データが見つかりません。</p>";
       }
     }
 
     // JSONPリクエストを送信
     const script = document.createElement('script');
-    script.src = `https://script.google.com/macros/s/AKfycbxxkpLZxZxl2Dkm2UZxnacZnxFnH2PXUBCOJo4iyM4Cg9jLFCiRw61xgYMS4P0g7LJr/exec?userName=${userName}&companyName=${companyName}&callback=handleResponse`;
+    script.src = `https://script.google.com/macros/s/AKfycbwyk1bfqgHBy69cREL2blsAoCUE-367gfGoqOmogNJ60--OrQKrpp-nEd59QuNSRQU/exec?userName=${userName}&companyName=${companyName}&callback=handleResponse`;
     document.body.appendChild(script);
   </script>
 </body>
