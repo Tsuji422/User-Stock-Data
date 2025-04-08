@@ -93,8 +93,10 @@
         const averagePrice = parseFloat(stock.averagePurchasePrice);
 
         // 含み損益と現金換算額を計算
-        const cashValue = currentPrice * remainingStock;
-        const profitLoss = (currentPrice - averagePrice) * remainingStock;
+        //const cashValue = currentPrice * remainingStock;
+        const cashValue = parseFloat(stock.cashValue);
+        //const profitLoss = (currentPrice - averagePrice) * remainingStock;
+        const profitLoss = stock.profitLoss;
 
         // データをHTMLに表示
         document.getElementById('companyName').innerText = companyName;
