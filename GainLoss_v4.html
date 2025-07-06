@@ -88,7 +88,7 @@
     console.log("🔍 company_name:", company_name);
 
     if (!user_name || !company_name) {
-      document.body.innerHTML = "<p style='text-align:center;'>パラメータが不足しています。</p>";
+      document.body.innerHTML = "<p style='text-align:center; color: red;'>パラメータが不足しています。</p>";
     } else {
       const apiUrl = `https://ddtszhkycoqnffgciucl.supabase.co/functions/v1/GetSheetDataForList_v1?user_name=${encodeURIComponent(user_name)}&company_name=${encodeURIComponent(company_name)}`;
       console.log("📡 API URL:", apiUrl);
@@ -108,26 +108,26 @@
             const stock = data.data[0];
             console.log("📊 Stock Object:", stock);
 
-            const current_price = parseFloat(stock.current_price ?? 0);
-            const remaining_stock = parseInt(stock.remaining_stock ?? 0);
-            const cash_value = parseFloat(stock.cash_value ?? 0);
-            const profit_loss = parseFloat(stock.profit_loss ?? 0);
+            const total_stock = parseInt(stock.total_stock ?? 0);
+            const current_total = parseFloat(stock.current_total ?? 0);
+            const total_gain_loss = parseFloat(stock.total_gain_loss ?? 0);
+            const current_price = total_stock > 0 ? current_total / total_stock : 0;
 
             document.getElementById('companyName').innerText = company_name;
-            document.getElementById('stockQuantity').innerText = `${remaining_stock} 株`;
+            document.getElementById('stockQuantity').innerText = `${total_stock} 株`;
             document.getElementById('stockPrice').innerText = `¥${current_price.toLocaleString()}`;
-            document.getElementById('cashValue').innerText = `¥${cash_value.toLocaleString()}`;
+            document.getElementById('cashValue').innerText = `¥${current_total.toLocaleString()}`;
 
             const profitLossElement = document.getElementById('profitLoss');
-            profitLossElement.innerText = `¥${profit_loss.toLocaleString()}`;
-            profitLossElement.className = profit_loss >= 0 ? 'gain' : 'loss';
+            profitLossElement.innerText = `¥${total_gain_loss.toLocaleString()}`;
+            profitLossElement.className = total_gain_loss >= 0 ? 'gain' : 'loss';
           } else {
-            document.body.innerHTML = "<p style='text-align:center;'>データが見つかりません。</p>";
+            document.body.innerHTML = "<p style='text-align:center; color: red;'>データが見つかりません。</p>";
           }
         })
         .catch(error => {
           console.error("❌ Fetch Error:", error);
-          document.body.innerHTML = `<p style='text-align:center;'>データ取得エラー：${error.message}</p>`;
+          document.body.innerHTML = `<p style='text-align:center; color: red;'>データ取得エラー：${error.message}</p>`;
         });
     }
   </script>
