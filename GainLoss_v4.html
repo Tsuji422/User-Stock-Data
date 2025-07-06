@@ -90,7 +90,7 @@
     if (!user_name || !company_name) {
       document.body.innerHTML = "<p style='text-align:center;'>パラメータが不足しています。</p>";
     } else {
-      const apiUrl = `https://YOUR-EDGE-FUNCTION-URL-HERE?user_name=${encodeURIComponent(user_name)}&company_name=${encodeURIComponent(company_name)}`;
+      const apiUrl = `https://ddtszhkycoqnffgciucl.supabase.co/functions/v1/GetSheetDataForList_v1?user_name=${encodeURIComponent(user_name)}&company_name=${encodeURIComponent(company_name)}`;
       console.log("📡 API URL:", apiUrl);
 
       fetch(apiUrl)
