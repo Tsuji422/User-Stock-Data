@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Stock Detail Debug</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f9f9f9;
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+    }
+    .container {
+      padding: 20px;
+      text-align: left;
+      max-width: 400px;
+      margin: 0 auto;
+      background-color: #fff;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+      box-sizing: border-box;
+    }
+    .row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+      border-bottom: 1px solid #eee;
+      padding-bottom: 5px;
+    }
+    .row:last-child {
+      border-bottom: none;
+    }
+    .title {
+      font-size: 20px;
+      font-weight: bold;
+      margin-bottom: 15px;
+      text-align: center;
+    }
+    .label {
+      font-weight: bold;
+      color: #555;
+    }
+    .value {
+      font-size: 16px;
+      color: #333;
+    }
+    .gain {
+      color: green;
+      font-weight: bold;
+    }
+    .loss {
+      color: red;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="title" id="companyName">企業名</div>
+    <div class="row">
+      <div class="label">保有株数</div>
+      <div class="value" id="stockQuantity">Loading...</div>
+    </div>
+    <div class="row">
+      <div class="label">現金換算額</div>
+      <div class="value" id="cashValue">Loading...</div>
+    </div>
+    <div class="row">
+      <div class="label">評価損益</div>
+      <div class="value" id="profitLoss">Loading...</div>
+    </div>
+  </div>
+
+  <script>
+    const urlParams = new URLSearchParams(window.location.search);
+    const user_name = urlParams.get('user_name');
+    const company_name = urlParams.get('company_name');
+
+    console.log("🔍 user_name:", user_name);
+    console.log("🔍 company_name:", company_name);
+
+    if (!user_name || !company_name) {
+      document.body.innerHTML = "<p style='text-align:center; color: red;'>パラメータが不足しています。</p>";
+    } else {
+      const apiUrl = `https://ddtszhkycoqnffgciucl.supabase.co/functions/v1/GetSheetDataForList_v2?user_name=${encodeURIComponent(user_name)}&company_name=${encodeURIComponent(company_name)}`;
+      console.log("📡 API URL:", apiUrl);
+
+      fetch(apiUrl)
+        .then(res => {
+          console.log("📬 HTTP Status:", res.status);
+          if (!res.ok) {
+            throw new Error("HTTP error! Status: " + res.status);
+          }
+          return res.json();
+        })
+        .then(data => {
+          console.log("📦 Supabase Response:", data);
+
+          if (data.status === "success" && data.data.length > 0) {
+            const stock = data.data[0];
+            console.log("📊 Stock Object:", stock);
+
+            const total_stock = parseInt(stock.total_stock ?? 0);
+            const current_total = parseFloat(stock.current_investment_value ?? 0);
+            const total_gain_loss = parseFloat(stock.total_gain_loss ?? 0);
+
+            document.getElementById('companyName').innerText = company_name;
+            document.getElementById('stockQuantity').innerText = `${total_stock} 株`;
+            document.getElementById('cashValue').innerText = `¥${current_total.toLocaleString()}`;
+
+            const profitLossElement = document.getElementById('profitLoss');
+            profitLossElement.innerText = `¥${total_gain_loss.toLocaleString()}`;
+            profitLossElement.className = total_gain_loss >= 0 ? 'gain' : 'loss';
+          } else {
+            document.body.innerHTML = "<p style='text-align:center; color: red;'>データが見つかりません。</p>";
+          }
+        })
+        .catch(error => {
+          console.error("❌ Fetch Error:", error);
+          document.body.innerHTML = `<p style='text-align:center; color: red;'>データ取得エラー：${error.message}</p>`;
+        });
+    }
+  </script>
+</body>
+</html>
